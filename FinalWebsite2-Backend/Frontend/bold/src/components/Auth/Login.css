@@ -1,0 +1,92 @@
+.page-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-color: black;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 1px solid pink;
+    background-color: black;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.login-form h2 {
+    color: pink;
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    color: pink;
+    font-size: 1rem;
+}
+
+.form-group input {
+    padding: 0.8rem;
+    border: 1px solid pink;
+    border-radius: 4px;
+    background-color: black;
+    color: white;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #ff69b4;
+    box-shadow: 0 0 0 2px rgba(255, 105, 180, 0.2);
+}
+
+.error-message {
+    color: #ff4444;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.login-button {
+    padding: 0.8rem;
+    background-color: transparent;
+    color: pink;
+    border: 2px solid pink;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.login-button:hover {
+    background-color: pink;
+    color: black;
+}
+
+.register-link {
+    color: pink;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    transition: opacity 0.3s ease;
+}
+
+.register-link:hover {
+    opacity: 0.8;
+}

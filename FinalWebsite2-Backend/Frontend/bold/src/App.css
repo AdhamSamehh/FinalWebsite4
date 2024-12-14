@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik+Distressed&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: black;
+    color: white;
+}
+
+.App {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: black;
+    color: white;
+}
+
+.content {
+    flex: 1;
+    padding-top: 80px; /* Increased to account for navbar height */
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.nav-bar{
+  height:70 px;
+  background-color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4rem;
+}
+
+.nav-bar a{
+  text-decoration: none;
+  color: pink;
+}
+
+.nav-bar h2{
+  font-size: 40px;
+}
+
+.nav-bag{
+  display: flex;
+  align-items:center;
+}
+
+
+.bag-quantity{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 25px;
+  width: 25px;
+  background: pink;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  color: pink;
+  margin-left: 5px;
+}
+
+.notFound{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: pink;
+  min-height: 80vh;
+  text-align: center;
+  background-color: black;
+}
+
+.notFound h2{
+  font-size: 55px;
+  margin: 0;
+}
+
+.notFound p{
+  font-size:20px;
+  margin: 0;
+}
