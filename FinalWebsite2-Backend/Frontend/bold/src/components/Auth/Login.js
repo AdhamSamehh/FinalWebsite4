@@ -4,13 +4,48 @@ import { useAuth } from '../../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
-    const navigate = useNavigate();
-    const { login } = useAuth();
     const [formData, setFormData] = useState({
         username: '',
         password: ''
     });
     const [error, setError] = useState('');
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        try {
+            const response = await fetch('http://localhost:5001/user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(formData)
+            });
+
+            // Try to parse response as JSON, fallback to text if it fails
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                const textData = await response.text();
+                throw new Error(textData || 'Server error');
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Login failed');
+            }
+
+            await login(data);
+            navigate('/');
+        } catch (err) {
+            console.error('Login error:', err);
+            setError(err.message || 'Login failed');
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -19,40 +54,10 @@ const Login = () => {
         });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            const response = await fetch('http://localhost:4444/user/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.text();
-
-            if (!response.ok) {
-                throw new Error(data || 'Login failed');
-            }
-
-            // Store username in auth context
-            login({ username: formData.username });
-            
-            // If login is successful, redirect to home
-            navigate('/');
-        } catch (err) {
-            setError(err.message || 'An error occurred during login');
-            console.error('Login error:', err);
-        }
-    };
-
     return (
         <div className="login-container">
             <form className="login-form" onSubmit={handleSubmit}>
-                <h2>Login</h2>
+                <h2>Login to BOLD</h2>
                 {error && <div className="error-message">{error}</div>}
                 <div className="form-group">
                     <label htmlFor="username">Username</label>
@@ -77,7 +82,9 @@ const Login = () => {
                     />
                 </div>
                 <button type="submit" className="login-button">Login</button>
-                <a href="/register" className="register-link">Don't have an account? Register</a>
+                <div className="register-link">
+                    <p>Don't have an account? <a href="/register">Register Here</a></p>
+                </div>
             </form>
         </div>
     );

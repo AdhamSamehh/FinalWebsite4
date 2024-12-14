@@ -16,7 +16,7 @@ const Home = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get('http://localhost:4444/products');
+            const response = await axios.get('http://localhost:5001/products');
             setProducts(response.data);
             setLoading(false);
         } catch (err) {
@@ -33,7 +33,7 @@ const Home = () => {
                 return;
             }
 
-            await axios.put('http://localhost:4444/products/buyNow', {
+            await axios.put('http://localhost:5001/products/buyNow', {
                 productId,
                 userId,
                 quantity: 1

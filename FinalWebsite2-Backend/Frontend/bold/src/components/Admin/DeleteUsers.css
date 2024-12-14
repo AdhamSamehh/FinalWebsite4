@@ -1,0 +1,101 @@
+.delete-users-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #000;
+    color: #fff;
+}
+
+.delete-users-container h2 {
+    color: #ffc0cb;
+    margin-bottom: 20px;
+}
+
+.delete-actions {
+    margin-bottom: 20px;
+}
+
+.delete-button {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.delete-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.delete-button:hover:not(:disabled) {
+    background-color: #cc0000;
+}
+
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #111;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+.user-item:hover {
+    border-color: #ffc0cb;
+}
+
+.user-item input[type="checkbox"] {
+    margin-right: 15px;
+}
+
+.user-info {
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    align-items: center;
+}
+
+.username {
+    font-weight: bold;
+    min-width: 150px;
+}
+
+.email {
+    color: #999;
+    flex: 1;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.status.active {
+    background-color: #28a745;
+}
+
+.status.inactive {
+    background-color: #dc3545;
+}
+
+.no-users {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.error {
+    color: #ff4444;
+    text-align: center;
+    padding: 20px;
+}

@@ -3,74 +3,102 @@ const cors = require('cors')
 const jwt = require('jsonwebtoken')
 const server = express();
 const bcrypt = require('bcryptjs')
-const port = 4444;
-const db_access = require('./db.js')
-const db = db_access.db
+const port = 5001;
+const { db, initializeTables } = require('./database');
 const cookieParser = require('cookie-parser')
+const multer = require('multer');
+const path = require('path');
 const JWT_SECRET = 'your-secret-key'; // In production, use environment variable
 
-server.use(cors({
-    origin: "http://localhost:3000",
-    credentials: true
-}))
-server.use(express.json());
-server.use(cookieParser())
+// Initialize database tables
+initializeTables();
 
-// Middleware to verify JWT token
+// Configure multer for handling file uploads
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function(req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    fileFilter: function(req, file, cb) {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = filetypes.test(file.mimetype);
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb('Error: Images only!');
+        }
+    }
+});
+
+// Serve static files from uploads directory
+server.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Middleware for token authentication
 const authenticateToken = (req, res, next) => {
+    const token = req.cookies.token;
+
+    if (!token) {
+        return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.clearCookie('token', cookieOptions);
+        return res.status(403).json({ error: "Invalid or expired token" });
+    }
+};
+
+// Middleware for admin authentication
+function verifyAdminToken(req, res, next) {
     const token = req.cookies.token;
     
     if (!token) {
-        return res.status(401).json({ error: 'Authentication required' });
+        return res.status(401).json({ error: "Authentication required" });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Invalid token' });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (!decoded.isAdmin) {
+            return res.status(403).json({ error: "Admin access required" });
         }
-        req.user = user;
+        req.user = decoded;
         next();
-    });
+    } catch (error) {
+        res.clearCookie('token', cookieOptions);
+        return res.status(403).json({ error: "Invalid or expired token" });
+    }
 };
 
-//Generate Token
-const generateToken = (id, isAdmin) => {
-    return jwt.sign({ id, isAdmin }, JWT_SECRET, { expiresIn: '1h' })
-}
+// Apply CORS configuration
+server.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:5001'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['set-cookie']
+}));
 
-const verifyToken = (req, res, next) => {
-    if (!req.cookies.token)
-        return res.status(401).send('Unauthorized')
-    jwt.verify(req.cookies.token, JWT_SECRET, (err, details) => {
-        if (err)
-            return res.status((403).send('invalid or expired token'))
-        req.userDetails = details
-        next()
-    })
-}
+server.use(cookieParser());
+server.use(express.json());
 
-function verifyAdminToken(req, res, next) {
-    const token = req.cookies.authToken; // Assuming token is sent via cookies
-
-    if (!token) {
-        return res.status(401).send("Access denied. No token provided.");
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(403).send("Invalid or expired token.");
-        }
-
-        // Check if the user is an admin
-        if (decoded.role !== 'admin') {
-            return res.status(403).send("Access denied. You are not an admin.");
-        }
-
-        // Attach user information to the request object
-        req.user = decoded;
-        next(); // Continue to the route handler
-    });
-}
+// Cookie settings
+const cookieOptions = {
+    httpOnly: true,
+    secure: false, // Set to true in production with HTTPS
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+};
 
 // Admin Registration Route
 server.post('/admin/register', async(req, res) => {
@@ -108,9 +136,15 @@ server.post('/admin/register', async(req, res) => {
                     return res.status(500).send("Error registering admin: " + err.message);
                 }
                 // Generate token
-                const token = jwt.sign({ id: this.lastID, username }, JWT_SECRET, {
-                    expiresIn: '24h'
-                });
+                const token = jwt.sign(
+                    { 
+                        id: this.lastID, 
+                        username: username,
+                        isAdmin: true 
+                    }, 
+                    JWT_SECRET, 
+                    { expiresIn: '24h' }
+                );
 
                 // Set cookie
                 res.cookie('token', token, {
@@ -121,7 +155,8 @@ server.post('/admin/register', async(req, res) => {
                 return res.status(201).json({
                     message: "Admin registered successfully.",
                     userID: this.lastID,
-                    username: username
+                    username: username,
+                    isAdmin: true
                 });
             });
         });
@@ -132,190 +167,270 @@ server.post('/admin/register', async(req, res) => {
 server.post('/admin/login', async (req, res) => {
     const { username, password } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).send("Username and password are required");
-    }
-
-    const query = `SELECT * FROM admins WHERE username = ?`;
-    db.get(query, [username], async (err, admin) => {
-        if (err) {
-            return res.status(500).send("Database error");
+    try {
+        if (!username || !password) {
+            return res.status(400).json({ 
+                error: "Missing required fields" 
+            });
         }
+
+        const query = `SELECT * FROM admins WHERE username = ?`;
         
-        if (!admin) {
-            return res.status(401).send("Invalid credentials");
-        }
-
-        try {
-            const validPassword = await bcrypt.compare(password, admin.password);
-            if (!validPassword) {
-                return res.status(401).send("Invalid credentials");
+        db.get(query, [username], async (err, admin) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ 
+                    error: "Error retrieving admin account" 
+                });
+            }
+            
+            if (!admin) {
+                return res.status(404).json({ 
+                    error: "Admin not found" 
+                });
             }
 
-            // Generate token with admin role
+            const passwordMatch = await bcrypt.compare(password, admin.password);
+            
+            if (!passwordMatch) {
+                return res.status(401).json({ 
+                    error: "Invalid password" 
+                });
+            }
+
             const token = jwt.sign(
                 { 
-                    id: admin.id, 
+                    id: admin.adminID,
                     username: admin.username,
-                    role: 'admin'
-                }, 
-                JWT_SECRET, 
-                { expiresIn: '1h' }
+                    isAdmin: true 
+                },
+                JWT_SECRET,
+                { expiresIn: '24h' }
             );
 
-            // Set token in cookie
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 3600000 // 1 hour
-            });
+            res.cookie('token', token, cookieOptions);
 
-            res.status(200).send("Admin login successful");
-        } catch (error) {
-            res.status(500).send("Error during login");
-        }
-    });
+            return res.status(200).json({
+                message: "Admin login successful",
+                username: admin.username,
+                isAdmin: true
+            });
+        });
+    } catch (error) {
+        console.error('Admin login error:', error);
+        return res.status(500).json({ 
+            error: "An error occurred during admin login" 
+        });
+    }
 });
 
-server.post('/admin/login', (req, res) => {
-    const { username, email, password } = req.body;
-
-    if (!username && !email || !password) {
-        return res.status(400).send("Missing required fields: username/email and password.");
+// Admin Logout Route
+server.post('/admin/logout', verifyAdminToken, (req, res) => {
+    try {
+        res.clearCookie('token', cookieOptions);
+        return res.status(200).json({ 
+            message: "Admin logout successful" 
+        });
+    } catch (error) {
+        console.error('Admin logout error:', error);
+        return res.status(500).json({ 
+            error: "An error occurred during admin logout" 
+        });
     }
-
-    let query;
-    let queryParams;
-
-    if (username) {
-        query = `SELECT * FROM admins WHERE username = ?`;
-        queryParams = [username];
-    } else if (email) {
-        query = `SELECT * FROM admins WHERE email = ?`;
-        queryParams = [email];
-    }
-
-    db.get(query, queryParams, async(err, row) => {
-        if (err) {
-            return res.status(500).send("Error retrieving admin: " + err.message);
-        } else if (!row) {
-            return res.status(404).send("Username or Email not found.");
-        }
-
-        const bcrypt = require('bcryptjs');
-        const passwordMatch = await bcrypt.compare(password, row.password);
-
-        if (!passwordMatch) {
-            return res.status(401).send("Incorrect password.");
-        }
-
-        // Generate token
-        const token = jwt.sign({ id: row.adminID, username }, JWT_SECRET, {
-            expiresIn: '24h'
-        });
-
-        // Set cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
-        return res.status(200).json({
-            message: "Login successful.",
-            token: token
-        });
-    });
 });
 
 //User Register
-server.post('/user/register', (req, res) => {
-    const username = req.body.username;
-    const email = req.body.email;
-    const password = req.body.password;
+server.post('/user/register', async (req, res) => {
+    const { username, email, password } = req.body;
 
     // Validation of Inputs
     if (!username || !email || !password) {
-        return res.status(400).send("username, email, and password are required.");
+        return res.status(400).json({
+            error: "Username, email, and password are required."
+        });
     }
 
-    // Hashing the password
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            return res.status(500).send("Error hashing the password: " + err.message);
+    try {
+        // First check if user already exists
+        const checkQuery = `SELECT username, email FROM users WHERE username = ? OR email = ?`;
+        const existingUser = await new Promise((resolve, reject) => {
+            db.get(checkQuery, [username, email], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (existingUser) {
+            if (existingUser.username === username) {
+                return res.status(400).json({
+                    error: "Username already exists"
+                });
+            }
+            if (existingUser.email === email) {
+                return res.status(400).json({
+                    error: "Email already exists"
+                });
+            }
         }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert into the database
         const insertQuery = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
-        db.run(insertQuery, [username, email, hashedPassword], function(err) {
-            if (err) {
-                return res.status(500).send(`Error during registration: ${err.message}`);
-            } else {
-                // Generate token
-                const token = jwt.sign({ id: this.lastID, username }, JWT_SECRET, {
-                    expiresIn: '24h'
-                });
-
-                // Set cookie
-                res.cookie('token', token, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-                });
-                return res.status(200).send("Registration successful");
-            }
+        const result = await new Promise((resolve, reject) => {
+            db.run(insertQuery, [username, email, hashedPassword], function(err) {
+                if (err) reject(err);
+                resolve(this);
+            });
         });
-    });
-});
-
-//Login
-server.post('/user/login', (req, res) => {
-    const { username, email, password } = req.body;
-
-    if (!username && !email || !password) {
-        return res.status(400).send("Missing required fields: username/email and password.");
-    }
-
-    let query;
-    let queryParams;
-
-    if (username) {
-        query = `SELECT * FROM users WHERE username = ?`;
-        queryParams = [username];
-    } else if (email) {
-        query = `SELECT * FROM users WHERE email = ?`;
-        queryParams = [email];
-    }
-
-    db.get(query, queryParams, async(err, row) => {
-        if (err) {
-            return res.status(500).send("Error retrieving user: " + err.message);
-        } else if (!row) {
-            return res.status(404).send("Username or Email not found.");
-        }
-
-        const bcrypt = require('bcryptjs');
-        const passwordMatch = await bcrypt.compare(password, row.password);
-
-        if (!passwordMatch) {
-            return res.status(401).send("Incorrect password.");
-        }
 
         // Generate token
-        const token = jwt.sign({ id: row.userID, username }, JWT_SECRET, {
+        const token = jwt.sign({ 
+            id: result.lastID, 
+            username 
+        }, JWT_SECRET, {
             expiresIn: '24h'
         });
 
         // Set cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
+        res.cookie('token', token, cookieOptions);
+        
         return res.status(200).json({
-            message: "Login successful.",
-            token: token
+            message: "Registration successful",
+            username: username
         });
-    });
+
+    } catch (error) {
+        console.error('Registration error:', error);
+        return res.status(500).json({
+            error: "An error occurred during registration"
+        });
+    }
+});
+
+// User Login Route
+server.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        if (!username || !password) {
+            return res.status(400).json({ 
+                error: "Missing required fields: username and password" 
+            });
+        }
+
+        const query = `SELECT * FROM users WHERE username = ?`;
+        
+        db.get(query, [username], async (err, user) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ 
+                    error: "Error retrieving user account" 
+                });
+            }
+            
+            if (!user) {
+                return res.status(404).json({ 
+                    error: "User account not found" 
+                });
+            }
+
+            const passwordMatch = await bcrypt.compare(password, user.password);
+            
+            if (!passwordMatch) {
+                return res.status(401).json({ 
+                    error: "Invalid password" 
+                });
+            }
+
+            const token = jwt.sign(
+                { 
+                    id: user.userID,
+                    username: user.username,
+                    isAdmin: false 
+                },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+
+            res.cookie('token', token, cookieOptions);
+
+            return res.status(200).json({
+                message: "Login successful",
+                username: user.username,
+                isAdmin: false
+            });
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({ 
+            error: "An error occurred during login" 
+        });
+    }
+});
+
+//Login
+server.post('/user/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        if (!username || !password) {
+            return res.status(400).json({ 
+                error: "Missing required fields: username and password" 
+            });
+        }
+
+        const query = `SELECT * FROM users WHERE username = ?`;
+        
+        db.get(query, [username], async (err, user) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ 
+                    error: "Error retrieving user account" 
+                });
+            }
+            
+            if (!user) {
+                return res.status(404).json({ 
+                    error: "User not found" 
+                });
+            }
+
+            const passwordMatch = await bcrypt.compare(password, user.password);
+            
+            if (!passwordMatch) {
+                return res.status(401).json({ 
+                    error: "Invalid password" 
+                });
+            }
+
+            // Generate JWT token
+            const token = jwt.sign(
+                { 
+                    id: user.userID,
+                    username: user.username,
+                    isAdmin: false 
+                },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+
+            // Set cookie
+            res.cookie('token', token, cookieOptions);
+
+            return res.status(200).json({
+                message: "Login successful",
+                username: user.username,
+                isAdmin: false
+            });
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({ 
+            error: "An error occurred during login" 
+        });
+    }
 });
 
 server.get('/users', authenticateToken, (req, res) => {
@@ -559,45 +674,352 @@ server.delete('/reviews/delete/:reviewID', authenticateToken, (req, res) => {
     });
 });
 
-db.serialize(() => {
-    db.run(db_access.createUsertable, (err) => {
-        if (err) {
-            console.error("Error creating user table:", err);
-        } else {
-            console.log("User table created successfully!");
-        }
-    })
+// Admin Product Routes
+server.post('/admin/products/add', verifyAdminToken, upload.array('images', 5), async (req, res) => {
+    try {
+        const { ProductName, productDescription, price, category, stockQuantity } = req.body;
 
-    db.run(db_access.createProductstable, (err) => {
-        if (err) {
-            console.error("Error creating products table:", err);
-        } else {
-            console.log("Products table created successfully!");
+        // Validate required fields
+        if (!ProductName || !productDescription || !price || !category || !stockQuantity) {
+            return res.status(400).json({ error: "All fields are required" });
         }
-    })
-    db.run(db_access.createOrderstable, (err) => {
-        if (err) {
-            console.error("Error creating products table:", err);
-        } else {
-            console.log("Orders table created successfully!");
-        }
-    })
 
-    db.run(db_access.createReviewstable, (err) => {
+        // Get uploaded file paths
+        const imagePaths = req.files ? req.files.map(file => file.path) : [];
+
+        const query = `
+            INSERT INTO products (
+                ProductName, 
+                productDescription, 
+                price, 
+                category, 
+                stockQuantity, 
+                images
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        db.run(
+            query,
+            [ProductName, productDescription, price, category, stockQuantity, JSON.stringify(imagePaths)],
+            function(err) {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ error: "Error adding product to database" });
+                }
+
+                res.status(201).json({
+                    message: "Product added successfully",
+                    productId: this.lastID
+                });
+            }
+        );
+    } catch (error) {
+        console.error('Error adding product:', error);
+        res.status(500).json({ error: "Failed to add product" });
+    }
+});
+
+// Get all products (admin)
+server.get('/admin/products', verifyAdminToken, (req, res) => {
+    const query = 'SELECT * FROM products';
+    
+    db.all(query, [], (err, products) => {
         if (err) {
-            console.error("Error creating products table:", err);
-        } else {
-            console.log("Reviews table created successfully!");
+            console.error('Database error:', err);
+            return res.status(500).json({ error: "Error retrieving products" });
         }
-    })
-    db.run(db_access.createAdminstable, (err) => {
+        
+        // Parse images JSON string for each product
+        const processedProducts = products.map(product => ({
+            ...product,
+            images: JSON.parse(product.images || '[]')
+        }));
+        
+        res.json(processedProducts);
+    });
+});
+
+// Delete product (admin)
+server.delete('/admin/products/:id', verifyAdminToken, (req, res) => {
+    const productId = req.params.id;
+    
+    const query = 'DELETE FROM products WHERE productID = ?';
+    
+    db.run(query, [productId], function(err) {
         if (err) {
-            console.error("Error creating products table:", err);
-        } else {
-            console.log("Admins table created successfully!");
+            console.error('Database error:', err);
+            return res.status(500).json({ error: "Error deleting product" });
         }
-    })
-})
+        
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+        
+        res.json({ message: "Product deleted successfully" });
+    });
+});
+
+// Update product (admin)
+server.put('/admin/products/:id', verifyAdminToken, upload.array('images', 5), (req, res) => {
+    const productId = req.params.id;
+    const { ProductName, productDescription, price, category, stockQuantity } = req.body;
+    
+    // Get new image paths if files were uploaded
+    const newImagePaths = req.files ? req.files.map(file => file.path) : [];
+    
+    // First get the existing product to merge images
+    const getQuery = 'SELECT images FROM products WHERE productID = ?';
+    
+    db.get(getQuery, [productId], (err, product) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: "Error retrieving product" });
+        }
+        
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+        
+        // Merge existing and new images
+        const existingImages = JSON.parse(product.images || '[]');
+        const updatedImages = [...existingImages, ...newImagePaths];
+        
+        const updateQuery = `
+            UPDATE products 
+            SET ProductName = ?,
+                productDescription = ?,
+                price = ?,
+                category = ?,
+                stockQuantity = ?,
+                images = ?
+            WHERE productID = ?
+        `;
+        
+        db.run(
+            updateQuery,
+            [ProductName, productDescription, price, category, stockQuantity, JSON.stringify(updatedImages), productId],
+            function(err) {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ error: "Error updating product" });
+                }
+                
+                if (this.changes === 0) {
+                    return res.status(404).json({ error: "Product not found" });
+                }
+                
+                res.json({ message: "Product updated successfully" });
+            }
+        );
+    });
+});
+
+// Update product code
+server.put('/admin/products/:productId/code', verifyAdminToken, async (req, res) => {
+    const { productId } = req.params;
+    const { newCode } = req.body;
+
+    if (!productId || !newCode) {
+        return res.status(400).json({ error: "Product ID and new code are required" });
+    }
+
+    try {
+        const updateQuery = `UPDATE products SET ProductCode = ? WHERE ProductID = ?`;
+        db.run(updateQuery, [newCode, productId], function(err) {
+            if (err) {
+                console.error('Error updating product code:', err);
+                return res.status(500).json({ error: "Failed to update product code" });
+            }
+            if (this.changes === 0) {
+                return res.status(404).json({ error: "Product not found" });
+            }
+            res.json({ message: "Product code updated successfully" });
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Get product by code
+server.get('/products/code/:code', async (req, res) => {
+    const { code } = req.params;
+    
+    try {
+        const query = `SELECT * FROM products WHERE ProductCode = ?`;
+        db.get(query, [code], (err, product) => {
+            if (err) {
+                console.error('Error fetching product:', err);
+                return res.status(500).json({ error: "Failed to fetch product" });
+            }
+            if (!product) {
+                return res.status(404).json({ error: "Product not found" });
+            }
+            res.json(product);
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Get all users (admin)
+server.get('/admin/users', verifyAdminToken, (req, res) => {
+    // First check if the users table exists
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", [], (err, table) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: "Error checking users table" });
+        }
+        
+        if (!table) {
+            console.error('Users table does not exist');
+            return res.status(500).json({ error: "Users table not found" });
+        }
+        
+        // Get table info
+        db.all("PRAGMA table_info(users)", [], (err, columns) => {
+            if (err) {
+                console.error('Error getting table info:', err);
+                return res.status(500).json({ error: "Error getting table structure" });
+            }
+            
+            console.log('Users table columns:', columns);
+            
+            // Now fetch the users
+            const query = `
+                SELECT userID, username, email, createdAt, lastLogin, isActive 
+                FROM users 
+                WHERE isAdmin = 0
+                ORDER BY userID DESC
+            `;
+            
+            db.all(query, [], (err, users) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ error: "Error retrieving users" });
+                }
+                
+                console.log('Found users:', users);
+                res.json(users || []);
+            });
+        });
+    });
+});
+
+// Update user credentials
+server.put('/admin/users/:userId', verifyAdminToken, async (req, res) => {
+    const userId = req.params.userId;
+    const { username, email, password } = req.body;
+    
+    try {
+        // Start with base query
+        let updateQuery = 'UPDATE users SET';
+        const updateValues = [];
+        const updateFields = [];
+
+        // Add fields that are present in the request
+        if (username) {
+            updateFields.push(' username = ?');
+            updateValues.push(username);
+        }
+        if (email) {
+            updateFields.push(' email = ?');
+            updateValues.push(email);
+        }
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateFields.push(' password = ?');
+            updateValues.push(hashedPassword);
+        }
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ error: "No fields to update" });
+        }
+
+        // Complete the query
+        updateQuery += updateFields.join(',') + ' WHERE userID = ?';
+        updateValues.push(userId);
+
+        // Execute the update
+        db.run(updateQuery, updateValues, function(err) {
+            if (err) {
+                console.error('Update error:', err);
+                return res.status(500).json({ error: "Failed to update user" });
+            }
+            if (this.changes === 0) {
+                return res.status(404).json({ error: "User not found" });
+            }
+            res.json({ message: "User updated successfully" });
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Delete user (admin)
+server.delete('/admin/users/:userId', verifyAdminToken, (req, res) => {
+    const userId = req.params.userId;
+    
+    const query = 'DELETE FROM users WHERE userID = ? AND isAdmin = 0';
+    
+    db.run(query, [userId], function(err) {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: "Error deleting user" });
+        }
+        
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "User not found or cannot delete admin" });
+        }
+        
+        res.json({ message: "User deleted successfully" });
+    });
+});
+
+// Logout Route (works for both users and admins)
+server.post('/logout', (req, res) => {
+    try {
+        res.clearCookie('token', {
+            ...cookieOptions,
+            maxAge: 0
+        });
+
+        return res.status(200).json({
+            message: "Logged out successfully"
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        return res.status(500).json({
+            error: "An error occurred during logout"
+        });
+    }
+});
+
+// Auth verification route
+server.get('/auth/verify', (req, res) => {
+    const token = req.cookies.token;
+    
+    if (!token) {
+        return res.status(401).json({ 
+            error: "Authentication required" 
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        res.json({
+            username: decoded.username,
+            isAdmin: decoded.isAdmin
+        });
+    } catch (error) {
+        res.clearCookie('token', cookieOptions);
+        return res.status(403).json({ 
+            error: "Invalid or expired token" 
+        });
+    }
+});
 
 server.listen(port, () => {
     console.log(`Server is listening at port ${ port }`)

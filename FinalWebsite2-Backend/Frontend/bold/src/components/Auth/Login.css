@@ -1,19 +1,22 @@
-.page-container {
+body {
+    margin: 0;
+    padding: 0;
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
     background-color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .login-container {
     width: 100%;
     max-width: 400px;
-    padding: 2rem;
-    border-radius: 8px;
-    border: 1px solid pink;
+    padding: 2.5rem;
+    border-radius: 12px;
+    border: 2px solid pink;
     background-color: black;
+    box-shadow: 0 0 20px rgba(255, 192, 203, 0.2);
+    margin: 100px auto;
 }
 
 .login-form {
@@ -25,68 +28,176 @@
 .login-form h2 {
     color: pink;
     text-align: center;
-    margin-bottom: 1rem;
-    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    font-size: 3.5rem;
+    font-family: 'Bahiana', cursive;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(255, 192, 203, 0.3);
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.8rem;
 }
 
 .form-group label {
     color: pink;
-    font-size: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 0.5rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .form-group input {
-    padding: 0.8rem;
-    border: 1px solid pink;
-    border-radius: 4px;
+    padding: 1rem;
+    border: 2px solid pink;
+    border-radius: 8px;
     background-color: black;
-    color: white;
+    color: pink;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    caret-color: pink;
+    width: 100%;
+}
+
+.form-group input::placeholder {
+    color: rgba(255, 192, 203, 0.5);
     font-size: 1rem;
+}
+
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus,
+.form-group input:-webkit-autofill:active {
+    -webkit-text-fill-color: pink !important;
+    -webkit-box-shadow: 0 0 0 30px black inset !important;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 .form-group input:focus {
     outline: none;
-    border-color: #ff69b4;
-    box-shadow: 0 0 0 2px rgba(255, 105, 180, 0.2);
-}
-
-.error-message {
-    color: #ff4444;
-    text-align: center;
-    margin-bottom: 1rem;
+    border-color: #ff9eb5;
+    box-shadow: 0 0 10px rgba(255, 192, 203, 0.3);
 }
 
 .login-button {
-    padding: 0.8rem;
-    background-color: transparent;
-    color: pink;
-    border: 2px solid pink;
-    border-radius: 4px;
+    background-color: pink;
+    color: black;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
-    font-size: 1rem;
     transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 1rem;
 }
 
 .login-button:hover {
-    background-color: pink;
-    color: black;
+    background-color: #ff9eb5;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 192, 203, 0.3);
+}
+
+.logout-button {
+    background-color: #000;
+    color: #fff;
+    border: 2px solid #ff69b4;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    margin: 10px;
+}
+
+.logout-button:hover {
+    background-color: #ff69b4;
+    color: #000;
+    border-color: #000;
+}
+
+.error-message {
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid pink;
+    color: pink;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.success-message {
+    background-color: rgba(0, 255, 0, 0.1);
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    text-align: center;
 }
 
 .register-link {
-    color: pink;
-    text-decoration: none;
+    margin-top: 2rem;
     text-align: center;
-    display: block;
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    transition: opacity 0.3s ease;
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 192, 203, 0.2);
 }
 
-.register-link:hover {
-    opacity: 0.8;
+.register-link p {
+    color: pink;
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+
+.register-link a {
+    color: pink;
+    text-decoration: none;
+    font-family: 'Bahiana', cursive;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.register-link a:hover {
+    color: #ff69b4;
+    transform: scale(1.1);
+    text-shadow: 0 0 10px rgba(255, 192, 203, 0.5);
+}
+
+.register-form h2 {
+    color: pink;
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-family: 'Bahiana', cursive;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 1.5rem;
+        margin: 60px auto;
+    }
+
+    .login-form h2 {
+        font-size: 2.5rem;
+    }
+
+    .form-group input {
+        padding: 0.8rem;
+    }
+
+    .login-button {
+        padding: 0.8rem;
+    }
 }

@@ -1,0 +1,174 @@
+.admin-dashboard {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: black;
+    min-height: calc(100vh - 120px);
+}
+
+.admin-dashboard h1 {
+    color: #ffb6c1;
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 3rem;
+    font-family: 'Bahiana', cursive;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    padding: 1rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.dashboard-card {
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    border: 2px solid #ffb6c1;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(255, 182, 193, 0.3);
+    background-color: #2a2a2a;
+}
+
+.dashboard-card h3 {
+    color: #ffb6c1;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    text-align: center;
+    font-family: 'Bahiana', cursive;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.dashboard-button {
+    padding: 0.7rem 1.5rem;
+    border: 2px solid #ffb6c1;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #ffb6c1;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    text-align: center;
+    display: inline-block;
+    width: 100%;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+.dashboard-button:hover {
+    background-color: #ffb6c1;
+    color: black;
+}
+
+.dashboard-button.primary,
+.dashboard-button.secondary {
+    background-color: transparent;
+    color: #ffb6c1;
+    border: 2px solid #ffb6c1;
+}
+
+.dashboard-button.primary:hover,
+.dashboard-button.secondary:hover {
+    background-color: #ffb6c1;
+    color: black;
+    transform: scale(1.02);
+}
+
+.dashboard-button.danger {
+    background-color: transparent;
+    color: #ff4d4d;
+    border: 2px solid #ff4d4d;
+}
+
+.dashboard-button.danger:hover {
+    background-color: #ff4d4d;
+    color: black;
+    transform: scale(1.02);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    margin-bottom: 30px;
+    background-color: #000;
+    border-bottom: 3px solid #ffb6c1;
+}
+
+.dashboard-header h1 {
+    color: #ffb6c1;
+    margin: 0;
+    font-family: 'Bahiana', cursive;
+    font-size: 2.5em;
+}
+
+.dashboard-header .logout-button {
+    padding: 0.7rem 1.5rem;
+    border: 2px solid #ffb6c1;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #ffb6c1;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dashboard-header .logout-button:hover {
+    background-color: #ffb6c1;
+    color: black;
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+    .admin-dashboard {
+        margin: 1rem;
+        padding: 1rem;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-card {
+        padding: 1.5rem;
+    }
+
+    .admin-dashboard h1 {
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-card h3 {
+        font-size: 1.5rem;
+    }
+
+    .dashboard-button {
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+}

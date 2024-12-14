@@ -1,0 +1,90 @@
+.product-spreadsheet-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.product-spreadsheet-container h2 {
+    color: #ffb6c1;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-family: 'Bahiana', cursive;
+    font-size: 2.5rem;
+}
+
+.spreadsheet-wrapper {
+    overflow-x: auto;
+    background-color: black;
+    border-radius: 8px;
+    border: 1px solid #ffb6c1;
+}
+
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+}
+
+.product-table th,
+.product-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 182, 193, 0.2);
+}
+
+.product-table th {
+    background-color: rgba(255, 182, 193, 0.1);
+    color: #ffb6c1;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.product-table td {
+    color: #fff;
+}
+
+.product-table tbody tr:hover {
+    background-color: rgba(255, 182, 193, 0.05);
+}
+
+.description-cell {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.image-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.image-preview img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.image-preview span {
+    color: #ffb6c1;
+    font-size: 0.8rem;
+}
+
+.loading {
+    text-align: center;
+    color: #ffb6c1;
+    font-size: 1.2rem;
+    padding: 2rem;
+}
+
+.error {
+    text-align: center;
+    color: #ff4d4d;
+    font-size: 1.2rem;
+    padding: 2rem;
+    background-color: rgba(255, 77, 77, 0.1);
+    border-radius: 4px;
+    margin: 2rem;
+}

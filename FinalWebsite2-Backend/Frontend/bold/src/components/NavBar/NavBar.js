@@ -9,14 +9,20 @@ const NavBar = () => {
 
     const handleLogout = async () => {
         try {
-            const response = await fetch('http://localhost:4444/logout', {
+            const endpoint = user?.isAdmin ? '/admin/logout' : '/user/logout';
+            const response = await fetch(`http://localhost:5001${endpoint}`, {
                 method: 'POST',
                 credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
 
             if (response.ok) {
-                logout();
-                navigate('/login');
+                await logout();
+                navigate(user?.isAdmin ? '/admin/login' : '/login');
+            } else {
+                console.error('Logout failed');
             }
         } catch (error) {
             console.error('Logout failed:', error);
@@ -35,7 +41,12 @@ const NavBar = () => {
             </div>
             <div className="nav-right">
                 {isAuthenticated ? (
-                    <button onClick={handleLogout} className="logout-button">Logout</button>
+                    <>
+                        {user?.isAdmin && (
+                            <Link to="/admin/dashboard" className="dashboard-button">Dashboard</Link>
+                        )}
+                        <button onClick={handleLogout} className="logout-button">Logout</button>
+                    </>
                 ) : (
                     <div className="auth-buttons">
                         <Link to="/login" className="login-button">Login</Link>

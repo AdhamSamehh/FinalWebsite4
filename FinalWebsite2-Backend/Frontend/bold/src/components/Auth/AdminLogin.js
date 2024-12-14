@@ -11,6 +11,7 @@ const AdminLogin = () => {
         password: ''
     });
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     const handleChange = (e) => {
         setFormData({
@@ -22,27 +23,37 @@ const AdminLogin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
 
         try {
-            const response = await fetch('http://localhost:4444/admin/login', {
+            const response = await fetch('http://localhost:5001/admin/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(formData)
             });
 
-            const data = await response.text();
-
-            if (!response.ok) {
-                throw new Error(data || 'Admin login failed');
+            // Try to parse response as JSON, fallback to text if it fails
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                const textData = await response.text();
+                throw new Error(textData || 'Server error');
             }
 
-            // Store admin info in auth context
-            login({ username: formData.username, isAdmin: true });
-            
-            // If login is successful, redirect to admin dashboard
-            navigate('/admin/dashboard');
+            if (response.ok) {
+                setSuccess(data.message || 'Login successful!');
+                await login({ 
+                    username: data.username, 
+                    isAdmin: true 
+                });
+                navigate('/admin/dashboard');
+            } else {
+                throw new Error(data.error || 'Admin login failed');
+            }
         } catch (err) {
             setError(err.message || 'An error occurred during admin login');
             console.error('Admin login error:', err);
@@ -55,12 +66,14 @@ const AdminLogin = () => {
                 <form className="login-form" onSubmit={handleSubmit}>
                     <h2>Admin Login</h2>
                     {error && <div className="error-message">{error}</div>}
+                    {success && <div className="success-message">{success}</div>}
                     <div className="form-group">
                         <label htmlFor="username">Username</label>
                         <input
                             type="text"
                             id="username"
                             name="username"
+                            placeholder="Enter your username"
                             value={formData.username}
                             onChange={handleChange}
                             required
@@ -72,6 +85,7 @@ const AdminLogin = () => {
                             type="password"
                             id="password"
                             name="password"
+                            placeholder="Enter your password"
                             value={formData.password}
                             onChange={handleChange}
                             required

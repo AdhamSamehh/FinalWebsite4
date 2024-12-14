@@ -21,7 +21,7 @@ body {
 
 .content {
     flex: 1;
-    padding-top: 80px; /* Increased to account for navbar height */
+    padding-top: 120px; /* Increased to account for taller navbar */
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;

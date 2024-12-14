@@ -1,0 +1,130 @@
+.user-list-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: black;
+    min-height: calc(100vh - 120px);
+}
+
+.user-list-container h2 {
+    color: #ffb6c1;
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 3rem;
+    font-family: 'Bahiana', cursive;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.user-table-wrapper {
+    overflow-x: auto;
+    margin-top: 20px;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 2px solid #ffb6c1;
+    transition: all 0.3s ease;
+}
+
+.user-table-wrapper:hover {
+    box-shadow: 0 6px 12px rgba(255, 182, 193, 0.3);
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.user-table th,
+.user-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.user-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.user-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-button,
+.delete-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.edit-button {
+    background-color: transparent;
+    border: 2px solid #ffb6c1;
+    color: #ffb6c1;
+}
+
+.edit-button:hover {
+    background-color: #ffb6c1;
+    color: black;
+}
+
+.delete-button {
+    background-color: transparent;
+    border: 2px solid #ff4d4d;
+    color: #ff4d4d;
+}
+
+.delete-button:hover {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.user-table td:last-child {
+    text-align: center;
+}
+
+.user-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Loading and error states */
+.loading,
+.error {
+    text-align: center;
+    padding: 2rem;
+    color: #ffb6c1;
+    font-family: 'Bahiana', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    margin-top: 2rem;
+    border: 2px solid #ffb6c1;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+    .user-list-container {
+        padding: 1rem;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 0.75rem;
+    }
+}
